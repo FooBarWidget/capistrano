@@ -265,7 +265,12 @@ namespace :deploy do
       end
     end
 
-    run "rm -f #{current_path} && ln -s #{latest_release} #{current_path}"
+    # Using a file rename because that's an atomic operation on Unix.
+    # However only GNU 'mv' supports replacing symlinks, other 'mv' implementations
+    # treat the target symlink as a directory, so we use Perl here to perform the
+    # rename. Perl is installed on almost all servers by default so this should
+    # be acceptable.
+    run "ln -s #{latest_release} #{current_path}.new; perl -e 'rename($ARGV[0], $ARGV[1]) || die $!' #{current_path}.new #{current_path}"
   end
 
   desc <<-DESC
